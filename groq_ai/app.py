@@ -1,6 +1,9 @@
 from dotenv import load_dotenv
 import os
 from groq import Groq
+import time
+import streamlit as st
+import json
 
 load_dotenv()
 
@@ -8,14 +11,32 @@ client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
 )
 
-chat_completion = client.chat.completions.create(
-    messages=[
-        {
-            "role": "user",
-            "content": "pergunte o que quiser aqui.",
-        }
-    ],
-    model="llama3-8b-8192",
-)
+st.title("Groq.ai")
+pergunta = st.text_input("Escreva sua pergunta:")
 
-print(chat_completion.choices[0].message.content)
+def stream_data():
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                # "content": "Como consigo os dados de todos os modelos de ia disponiveis no groq.ai?",
+                "content": pergunta,
+            }
+        ],
+        model="llama3-8b-8192",
+    )
+
+    for word in chat_completion.choices[0].message.content.split(" "):
+        yield word + " "
+        time.sleep(0.05)
+    
+    atributos = [{'Pergunta': pergunta}, {'Resposta': chat_completion.choices[0].message.content}]
+    # guardar as perguntas e as respostas em um arquivo json
+    with open("perguntas_respostas.json", "a") as f:
+        # f.write(f'"Pergunta": "{pergunta}",\n"Resposta": "{chat_completion.choices[0].message.content}"\n\n')
+        f.write(json.dumps(atributos, ensure_ascii=False))
+
+
+if st.button("Enviar"):
+    st.write_stream(stream_data)
+
