@@ -4,6 +4,7 @@ from groq import Groq
 import time
 import streamlit as st
 import json
+import random
 
 load_dotenv()
 
@@ -28,13 +29,13 @@ def stream_data():
 
     for word in chat_completion.choices[0].message.content.split(" "):
         yield word + " "
-        time.sleep(0.05)
+        time.sleep(random.uniform(0.05, 0.2))
     
-    atributos = [{'Pergunta': pergunta}, {'Resposta': chat_completion.choices[0].message.content}]
-    # guardar as perguntas e as respostas em um arquivo json
+    atributos = {'Pergunta': pergunta}, {'Resposta': chat_completion.choices[0].message.content}
+
     with open("perguntas_respostas.json", "a") as f:
-        # f.write(f'"Pergunta": "{pergunta}",\n"Resposta": "{chat_completion.choices[0].message.content}"\n\n')
-        f.write(json.dumps(atributos, ensure_ascii=False))
+        for item in atributos:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
 
 if st.button("Enviar"):
