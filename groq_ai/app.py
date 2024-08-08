@@ -1,43 +1,81 @@
 from dotenv import load_dotenv
 import os
-from groq import Groq
+import json
 import time
 import streamlit as st
-import json
-import random
+from groq import Groq
 
-load_dotenv()
-
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY"),
-)
 
 st.title("Groq.ai")
-pergunta = st.text_input("Escreva sua pergunta:")
+st.markdown("Criado por Ricardo Roson")
 
-def stream_data():
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                # "content": "Como consigo os dados de todos os modelos de ia disponiveis no groq.ai?",
-                "content": pergunta,
-            }
-        ],
-        model="llama3-8b-8192",
+if not load_dotenv():
+    if not os.path.exists('.env'):
+        with open('.env', 'w') as f:
+            pass
+    
+    st.title("Configure a chave da API")
+    api_key = st.text_input("Digite a chave da API (GROQ_API_KEY):")
+
+    if st.button("Salvar"):
+        with open('.env', 'w') as f:
+            f.write(f"GROQ_API_KEY={api_key}")
+
+        load_dotenv()
+        st.rerun()
+
+    st.stop()
+
+try:
+    client = Groq(
+        api_key=os.getenv("GROQ_API_KEY"),
     )
 
-    for word in chat_completion.choices[0].message.content.split(" "):
-        yield word + " "
-        time.sleep(random.uniform(0.05, 0.2))
-    
-    atributos = {'Pergunta': pergunta}, {'Resposta': chat_completion.choices[0].message.content}
+    pergunta = st.chat_input("Escreva sua pergunta:")
 
-    with open("perguntas_respostas.json", "a") as f:
-        for item in atributos:
-            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+    buffer = []
 
+    pasta_interacoes = "interações"
+    if not os.path.exists(pasta_interacoes):
+        os.makedirs(pasta_interacoes)
 
-if st.button("Enviar"):
-    st.write_stream(stream_data)
+    def stream_data():
+        global buffer
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": pergunta,
+                }
+            ],
+            model = "llama-3.1-70b-versatile",
+            # model = "mixtral-8x7b-32768",
+            # model="llama3-8b-8192",
+        )
+
+        with st.chat_message("ai", avatar="🤖"):
+            message = chat_completion.choices[0].message.content
+            buffer.extend(message.split(" "))
+            for word in buffer:
+                yield word + " "
+                time.sleep(0.05)
+            buffer.clear()
+
+        atributos = [{'Pergunta': pergunta}, {'Resposta': chat_completion.choices[0].message.content}]
+        buffer.append(json.dumps(atributos, ensure_ascii=False))
+
+    if pergunta:
+        with st.chat_message("human", avatar="👨"):
+            st.write(pergunta)
+
+        st.write_stream(stream_data)
+
+        arquivo = os.path.join(pasta_interacoes, "perguntas_respostas_{}.json".format(int(time.time())))
+        with open(arquivo, "w") as f:
+            f.writelines(buffer)
+
+except Exception as e:
+    st.error(f"Erro de autenticação: {e}")
+    st.write("Verifique se a chave da API está correta e tente novamente.")
 
