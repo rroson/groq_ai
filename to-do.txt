@@ -1,0 +1,3 @@
+# To-Do:
+# Inserir memória de conversação
+# Usar mongo-db para armazenar interaçoes
