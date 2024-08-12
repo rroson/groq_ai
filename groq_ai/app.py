@@ -47,9 +47,9 @@ st.title("Groq.ai")
 st.markdown(f"Criado por Ricardo Roson - Modelo: {modelo_ia['id']} - Escolha o modelo de IA na Sidebar.")
 
 # Carregar variáveis de ambiente do arquivo .env
-load_dotenv()
-api_key = os.getenv("GROQ_API_KEY")
-st.session_state.api_key = api_key
+# load_dotenv()
+# api_key = os.getenv("GROQ_API_KEY")
+# st.session_state.api_key = api_key
 
 # Configuração inicial da chave da API
 if 'api_key' not in st.session_state:

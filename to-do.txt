@@ -1,3 +1,2 @@
 # To-Do:
-# Inserir memória de conversação
-# colocar barra lateral para escolha dos modelos e histórico de interações
+# colocar barra lateral o histórico de interações
